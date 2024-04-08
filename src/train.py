@@ -11,6 +11,7 @@ import torchvision.models as models
 from torch.optim import Adam
 import optuna
 from tqdm import tqdm
+import time
 
 from utils import (
     create_image_labels_list,
@@ -23,13 +24,14 @@ from utils import (
 from models import get_model
 
 print("Imports completed.")
+code_start_time = time.time()
 
 
 ############ CONFIG OPTIONS
 ##############################################################
 
 # How much train data do we want to use?
-train_size = 64  # 10000 or 40000
+train_size = 10000  # 10000 or 40000
 
 # define model
 backbone = "resnet50"  # "vgg16" or "resnet50"
@@ -38,11 +40,11 @@ tune_conv = False  # True or False
 batch_size = 32
 
 # options for hyper-parameter tuning
-num_epochs_optuna = 1
-num_trials_optuna = 1
+num_epochs_optuna = 4
+num_trials_optuna = 6
 
 # options for final training
-num_epochs = 1
+num_epochs = 30
 
 ##############################################################
 
@@ -103,7 +105,8 @@ loss_function = nn.BCELoss()
 def objective(trial):
 
     lr = trial.suggest_loguniform('lr', 1e-5, 1e-2)
-    dropout_rate = trial.suggest_uniform('dropout_rate', 0.0, 0.5)
+    # dropout_rate = trial.suggest_uniform('dropout_rate', 0.0, 0.5)
+    dropout_rate = 0.5
 
     model = get_model(backbone, tune_conv, num_categories, dropout_rate)
     model = model.to(device)
@@ -111,6 +114,8 @@ def objective(trial):
     optimizer = Adam(model.parameters(), lr=lr)
 
     for epoch in range(num_epochs_optuna):
+        epoch_start_time = time.time()
+        
         model.train()
         running_loss = 0.0
         for images, labels in train_loader:
@@ -137,24 +142,33 @@ def objective(trial):
 
                 val_running_loss += loss.item()
 
-        print(f"Epoch {epoch+1}, Training Loss: {running_loss/len(train_loader)}, Validation Loss: {val_running_loss/len(val_loader)}")
+        epoch_end_time = time.time()
+        
+        print(f"Epoch {epoch+1}, Training Loss: {running_loss/len(train_loader)}, Validation Loss: {val_running_loss/len(val_loader)}, Time taken: {(epoch_end_time - epoch_start_time)/60.0} minutes.")
 
     print('Finished Training')
 
     return val_running_loss
 
 study = optuna.create_study(direction='minimize')
+print("Beginning hyperparameter tuning.")
+
+hyp_start_time = time.time()
 study.optimize(objective, n_trials=num_trials_optuna)
+hyp_end_time = time.time()
 
 print("Hyperparameter tuning completed.")
+print(f"Time taken: {(hyp_end_time - hyp_start_time)/60.0} minutes.")
 print("Best hyperparameters: ", study.best_trial.params)
+
 
 
 ############ TRAIN THE MODEL
 
 # best hyperparameters
 lr = study.best_trial.params['lr']
-dropout_rate = study.best_trial.params['dropout_rate']
+# dropout_rate = study.best_trial.params['dropout_rate']
+dropout_rate = 0.5
 
 # write hyperparameters to a txt file
 content = f"""backbone: {backbone}
@@ -184,7 +198,11 @@ history = {
     'val_accuracy': []
 }
 
+train_start_time = time.time()
+
 for epoch in range(num_epochs):
+    epoch_start_time = time.time()
+    
     # Training phase
     model.train() 
     running_loss = 0.0
@@ -224,15 +242,20 @@ for epoch in range(num_epochs):
     epoch_train_loss = running_loss / len(train_loader)
     epoch_val_loss = val_running_loss / len(val_loader)
     epoch_val_accuracy = correct_preds / total_preds
+    
+    epoch_end_time = time.time()
 
-    print(f"Epoch {epoch+1}, Training Loss: {epoch_train_loss}, Validation Loss: {epoch_val_loss}, Validation Accuracy: {epoch_val_accuracy}")
+    print(f"Epoch {epoch+1}, Training Loss: {epoch_train_loss}, Validation Loss: {epoch_val_loss}, Validation Accuracy: {epoch_val_accuracy}, Time taken: {(epoch_end_time - epoch_start_time)/60.0} minutes.")
 
     # Recording the metrics for this epoch
     history['train_loss'].append(epoch_train_loss)
     history['val_loss'].append(epoch_val_loss)
     history['val_accuracy'].append(epoch_val_accuracy)
+    
+train_end_time = time.time()
 
 print('Model training completed.')
+print(f"Time taken: {(train_end_time - train_start_time)/60.0} minutes")
 
 
 ############ SAVING METRICS
@@ -272,3 +295,10 @@ label_weights = np.array([
     0.4   # vehicle.truck
 ])
 save_metrics(model, device, test_loader, label_weights, run_path)
+
+
+code_end_time = time.time()
+
+print(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.")
+print(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes")
+print(f"Total time taken: {(code_end_time - code_start_time)/60} minutes.")
