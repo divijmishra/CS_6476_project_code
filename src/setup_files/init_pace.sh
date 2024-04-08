@@ -7,8 +7,8 @@
 # can also run the bash file with arguments to change GPU and number of hours, e.g.
 # bash init_pace.sh -g V100-16GB -h 2    (this change GPU to V100-16GB and requests access for 2 hours)
 
-gpu=A100-80GB
-hours=4
+gpu=V100-32GB
+hours=8
 
 while getopts ":g:h:" opt; do
     case "${opt}" in
@@ -18,4 +18,4 @@ while getopts ":g:h:" opt; do
 done
 
 # srun --partition=coc-gpu --gres=gpu:1 -C $gpu -N 1 -t $hours:00:00 --pty $SHELL
-srun --partition=coc-gpu --mem-per-cpu=32G --gres=gpu:1 -C $gpu -N 1 -t $hours:00:00 --pty $SHELL
+srun --partition=coc-gpu --mem-per-cpu=8G --gres=gpu:1 -C $gpu -N 1 -t $hours:00:00 --pty $SHELL
