@@ -37,7 +37,7 @@ train_size = 10000  # 10000 or 40000
 backbone = "resnet50"  # "vgg16" or "resnet50"
 tune_conv = False  # True or False
 
-batch_size = 32
+batch_size = 256
 
 # options for hyper-parameter tuning
 num_epochs_optuna = 4
@@ -300,5 +300,10 @@ save_metrics(model, device, test_loader, label_weights, run_path)
 code_end_time = time.time()
 
 print(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.")
-print(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes")
+print(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes.")
 print(f"Total time taken: {(code_end_time - code_start_time)/60} minutes.")
+
+with open(save_dir + "times.txt", "w") as file:
+    file.write(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.\n")
+    file.write(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes.\n")
+    file.write(f"Total time taken: {(code_end_time - code_start_time)/60} minutes.\n")

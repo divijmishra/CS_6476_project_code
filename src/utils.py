@@ -214,6 +214,6 @@ def save_metrics(model, device, data_loader, label_weights, save_dir):
     print(f"F1 Score: {f1}")
     
     with open(save_dir + "metrics.txt", "w") as file:
-        file.write(f"Precision: {precision}")
-        file.write(f"Recall: {recall}")
-        file.write(f"F1 Score: {f1}")
+        file.write(f"Precision: {precision}\n")
+        file.write(f"Recall: {recall}\n")
+        file.write(f"F1 Score: {f1}\n")
