@@ -29,18 +29,20 @@ print("Imports completed.")
 ##############################################################
 
 # How much train data do we want to use?
-train_size = 10000  # 10000 or 40000
+train_size = 2000  # 10000 or 40000
 
 # define model
 backbone = "resnet50"  # "vgg16" or "resnet50"
 tune_conv = False  # True or False
 
+batch_size = 32
+
 # options for hyper-parameter tuning
-num_epochs_optuna = 4
-num_trials_optuna = 16
+num_epochs_optuna = 2
+num_trials_optuna = 2
 
 # options for final training
-num_epochs = 30
+num_epochs = 2
 
 ##############################################################
 
@@ -52,6 +54,9 @@ seed = 42
 # data path
 # data_path = "~/scratch/CS_6476_project_code/data/processed_data/"
 data_path = "data/processed_data/"
+
+# path to images
+image_root_dir = data_path + "images/"
 
 # run saving path
 run_path = f"runs/{backbone}_tuneconv={tune_conv}_num_epochs={num_epochs}_run01/"
@@ -83,8 +88,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
-image_root_dir = data_path + "images/"
-batch_size=32
+
 train_loader, val_loader, test_loader = create_data_loaders(
     train_data, val_data, test_data, image_root_dir, batch_size, transform
 )
@@ -98,7 +102,7 @@ loss_function = nn.BCELoss()
 
 def objective(trial):
 
-    lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
+    lr = trial.suggest_loguniform('lr', 1e-5, 1e-2)
     dropout_rate = trial.suggest_uniform('dropout_rate', 0.0, 0.5)
 
     model = get_model(backbone, tune_conv, num_categories, dropout_rate)
