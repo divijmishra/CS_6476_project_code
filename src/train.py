@@ -29,7 +29,7 @@ print("Imports completed.")
 ##############################################################
 
 # How much train data do we want to use?
-train_size = 2000  # 10000 or 40000
+train_size = 64  # 10000 or 40000
 
 # define model
 backbone = "resnet50"  # "vgg16" or "resnet50"
@@ -38,11 +38,11 @@ tune_conv = False  # True or False
 batch_size = 32
 
 # options for hyper-parameter tuning
-num_epochs_optuna = 2
-num_trials_optuna = 2
+num_epochs_optuna = 1
+num_trials_optuna = 1
 
 # options for final training
-num_epochs = 2
+num_epochs = 1
 
 ##############################################################
 
@@ -143,7 +143,7 @@ def objective(trial):
 
     return val_running_loss
 
-study = optuna.create_study(direction='maximize')
+study = optuna.create_study(direction='minimize')
 study.optimize(objective, n_trials=num_trials_optuna)
 
 print("Hyperparameter tuning completed.")
@@ -160,6 +160,7 @@ dropout_rate = study.best_trial.params['dropout_rate']
 content = f"""backbone: {backbone}
 tune_conv: {tune_conv}
 train_size: {train_size}
+batch_size: {batch_size}
 num_epochs: {num_epochs}
 num_epochs_optuna: {num_epochs_optuna}
 num_trials_optuna: {num_trials_optuna}

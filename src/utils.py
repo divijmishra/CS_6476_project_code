@@ -169,7 +169,9 @@ def show_images_with_predictions(dataloader, model, device, categories, num_imag
 
                 if images_so_far == num_images:
                     model.train()
-                    return
+                    break
+                
+            break
         model.train()
         
     plt.savefig(save_dir + "image_tests.jpg")

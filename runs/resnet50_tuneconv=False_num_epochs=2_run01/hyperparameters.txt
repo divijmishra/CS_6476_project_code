@@ -1,0 +1,9 @@
+backbone: resnet50
+tune_conv: False
+train_size: 64
+batch_size: 32
+num_epochs: 2
+num_epochs_optuna: 2
+num_trials_optuna: 2
+lr: 6.126328337764913e-05
+dropout_rate: 0.3269324848763975
