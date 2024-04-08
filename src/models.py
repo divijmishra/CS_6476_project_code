@@ -33,7 +33,7 @@ def get_model(
     
     # VGG-16
     if backbone == "vgg16":
-        model = models.vgg16(pretrained=True)
+        model = models.vgg16(weights=models.VGG16_Weights.DEFAULT)
         
         for param in model.parameters():
             param.requires_grad=False
@@ -70,7 +70,7 @@ def get_model(
         
     # ResNet-50
     elif backbone == "resnet50":
-        model = models.resnet50(pretrained=True)
+        model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
         
         for param in model.parameters():
             param.requires_grad=False

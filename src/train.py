@@ -16,31 +16,27 @@ from utils import (
     create_image_labels_list,
     split_data,    
     create_data_loaders,
+    plot_training_history,
+    show_images_with_predictions,
+    save_metrics
 )
 from models import get_model
 
 print("Imports completed.")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Device: {device}")
 
-# data_path = "~/scratch/CS_6476_project_code/data/processed_data/"
-data_path = "data/processed_data/"
-seed = 42
-
-
-##############################################################
 ############ CONFIG OPTIONS
+##############################################################
 
 # How much train data do we want to use?
 train_size = 10000  # 10000 or 40000
 
 # define model
-backbone = "vgg16"  # "vgg16" or "resnet50"
+backbone = "resnet50"  # "vgg16" or "resnet50"
 tune_conv = False  # True or False
 
 # options for hyper-parameter tuning
-num_epochs_optuna = 10
+num_epochs_optuna = 4
 num_trials_optuna = 16
 
 # options for final training
@@ -48,19 +44,34 @@ num_epochs = 30
 
 ##############################################################
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device: {device}")
+
+seed = 42
+
+# data path
+# data_path = "~/scratch/CS_6476_project_code/data/processed_data/"
+data_path = "data/processed_data/"
+
+# run saving path
+run_path = f"runs/{backbone}_tuneconv={tune_conv}_num_epochs={num_epochs}_run01/"
+while os.path.exists(run_path):
+    run_index = int(run_path[-3:-1]) + 1
+    run_path = run_path[:-3] + f"{run_index:02d}/"
+os.mkdir(run_path)
+print(f"This run will be saved in {run_path}.")
+
+print("Config settings completed.")
+
 
 ############ DATA PRE-PROCESSING
 
 # create image labels from annotations
-image_labels = create_image_labels_list(data_path)
+image_labels, categories = create_image_labels_list(data_path)
 num_categories = len(image_labels[0][1])
 
 # split data
-##############################################################
-# # How much train data do we want to use?
-# train_size = 10000
-# # train_size = 20000
-##############################################################
+# train_size defined earlier
 test_size, val_size = 2000, 2000
 train_data, val_data, test_data = split_data(
     image_labels, train_size, val_size, test_size, seed
@@ -78,15 +89,12 @@ train_loader, val_loader, test_loader = create_data_loaders(
     train_data, val_data, test_data, image_root_dir, batch_size, transform
 )
 
-##############################################################
-# # define model
-# backbone = "vgg16"  # "vgg16" or "resnet50"
-# tune_conv = False  # True or False
-##############################################################
-loss_function = nn.BCELoss()
+print("Data preprocessing completed.")
 
 
 ############ HYPERPARAMETER TUNING
+
+loss_function = nn.BCELoss()
 
 def objective(trial):
 
@@ -134,6 +142,7 @@ def objective(trial):
 study = optuna.create_study(direction='maximize')
 study.optimize(objective, n_trials=num_trials_optuna)
 
+print("Hyperparameter tuning completed.")
 print("Best hyperparameters: ", study.best_trial.params)
 
 
@@ -143,8 +152,24 @@ print("Best hyperparameters: ", study.best_trial.params)
 lr = study.best_trial.params['lr']
 dropout_rate = study.best_trial.params['dropout_rate']
 
+# write hyperparameters to a txt file
+content = f"""backbone: {backbone}
+tune_conv: {tune_conv}
+train_size: {train_size}
+num_epochs: {num_epochs}
+num_epochs_optuna: {num_epochs_optuna}
+num_trials_optuna: {num_trials_optuna}
+lr: {lr}
+dropout_rate: {dropout_rate}"""
+
+with open(run_path + "hyperparameters.txt", "w") as file:
+    file.write(content)
+
+# define the model
 model = get_model(backbone, tune_conv, num_categories, dropout_rate)
 model = model.to(device)
+
+# define the optimizer
 optimizer = Adam(model.parameters(), lr=lr)
 
 # train the model
@@ -202,7 +227,43 @@ for epoch in range(num_epochs):
     history['val_loss'].append(epoch_val_loss)
     history['val_accuracy'].append(epoch_val_accuracy)
 
-print('Finished Training')
+print('Model training completed.')
 
 
 ############ SAVING METRICS
+
+# save accuracy/loss metrics
+plot_training_history(history, run_path)
+
+# save test images
+show_images_with_predictions(test_loader, model, device, categories, num_images=6, save_dir=run_path)
+
+# save weighted metrics
+label_weights = np.array([
+    1.0,  # animal
+    0.1,  # flat.driveable_surface
+    1.0,  # human.pedestrian.adult
+    1.0,  # human.pedestrian.child
+    1.0,  # human.pedestrian.construction_worker
+    1.0,  # human.pedestrian.personal_mobility
+    1.0,  # human.pedestrian.police_officer
+    1.0,  # human.pedestrian.stroller
+    1.0,  # human.pedestrian.wheelchair
+    0.2,  # movable_object.barrier
+    0.2,  # movable_object.debris
+    0.3,  # movable_object.pushable_pullable
+    0.2,  # movable_object.trafficcone
+    0.1,  # static_object.bicycle_rack
+    0.5,  # vehicle.bicycle
+    0.4,  # vehicle.bus.bendy
+    0.4,  # vehicle.bus.rigid
+    0.4,  # vehicle.car
+    0.4,  # vehicle.construction
+    0.4,  # vehicle.ego
+    0.6,  # vehicle.emergency.ambulance
+    0.6,  # vehicle.emergency.police
+    0.5,  # vehicle.motorcycle
+    0.4,  # vehicle.trailer
+    0.4   # vehicle.truck
+])
+save_metrics(model, device, test_loader, label_weights, run_path)
