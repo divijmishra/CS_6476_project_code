@@ -303,7 +303,7 @@ print(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/6
 print(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes.")
 print(f"Total time taken: {(code_end_time - code_start_time)/60} minutes.")
 
-with open(save_dir + "times.txt", "w") as file:
+with open(run_path + "times.txt", "w") as file:
     file.write(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.\n")
     file.write(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes.\n")
     file.write(f"Total time taken: {(code_end_time - code_start_time)/60} minutes.\n")
