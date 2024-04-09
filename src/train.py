@@ -262,6 +262,10 @@ for epoch in range(num_epochs):
     
 train_end_time = time.time()
 
+# save history
+with open(run_path + "history.json", 'w') as file:
+    json.dump(history, file)
+
 print('Model training completed.')
 print(f"Time taken: {(train_end_time - train_start_time)/60.0} minutes")
 
