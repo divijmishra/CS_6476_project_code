@@ -61,7 +61,7 @@ data_path = "data/processed_data/"
 image_root_dir = data_path + "images/"
 
 # run saving path
-run_path = f"runs/{backbone}_tuneconv={tune_conv}_num_epochs={num_epochs}_run01/"
+run_path = f"runs/{backbone}_tuneconv={tune_conv}_data={train_size}_lr={lr}_num_epochs={num_epochs}_run01/"
 while os.path.exists(run_path):
     run_index = int(run_path[-3:-1]) + 1
     run_path = run_path[:-3] + f"{run_index:02d}/"
@@ -181,10 +181,13 @@ tune_conv: {tune_conv}
 train_size: {train_size}
 batch_size: {batch_size}
 num_epochs: {num_epochs}
-num_epochs_optuna: {num_epochs_optuna}
-num_trials_optuna: {num_trials_optuna}
 lr: {lr}
 dropout_rate: {dropout_rate}"""
+
+''' Insert these above if you re-enable Optuna
+num_epochs_optuna: {num_epochs_optuna}
+num_trials_optuna: {num_trials_optuna}
+'''
 
 with open(run_path + "hyperparameters.txt", "w") as file:
     file.write(content)
