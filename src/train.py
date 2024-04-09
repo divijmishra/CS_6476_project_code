@@ -37,14 +37,14 @@ train_size = 10000  # 10000 or 40000
 backbone = "resnet50"  # "vgg16" or "resnet50"
 tune_conv = False  # True or False
 
-batch_size = 256
-
-# options for hyper-parameter tuning
-num_epochs_optuna = 4
-num_trials_optuna = 6
+# # options for hyper-parameter tuning
+# num_epochs_optuna = 4
+# num_trials_optuna = 6
 
 # options for final training
+lr = 1e-2  # (1e-2, 6.67e-3, 3.33e-3, 1e-3, 6.67e-4, 3.33e-4, 1e-4)
 num_epochs = 30
+batch_size = 256
 
 ##############################################################
 
@@ -102,6 +102,7 @@ print("Data preprocessing completed.")
 
 loss_function = nn.BCELoss()
 
+'''
 def objective(trial):
 
     lr = trial.suggest_loguniform('lr', 1e-5, 1e-2)
@@ -160,14 +161,18 @@ hyp_end_time = time.time()
 print("Hyperparameter tuning completed.")
 print(f"Time taken: {(hyp_end_time - hyp_start_time)/60.0} minutes.")
 print("Best hyperparameters: ", study.best_trial.params)
-
+'''
 
 
 ############ TRAIN THE MODEL
 
+loss_function = nn.BCELoss()
+
 # best hyperparameters
-lr = study.best_trial.params['lr']
+# lr = study.best_trial.params['lr']
 # dropout_rate = study.best_trial.params['dropout_rate']
+
+# lr defined in config at the top
 dropout_rate = 0.5
 
 # write hyperparameters to a txt file
@@ -299,11 +304,11 @@ save_metrics(model, device, test_loader, label_weights, run_path)
 
 code_end_time = time.time()
 
-print(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.")
+# print(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.")
 print(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes.")
 print(f"Total time taken: {(code_end_time - code_start_time)/60} minutes.")
 
 with open(run_path + "times.txt", "w") as file:
-    file.write(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.\n")
+    # file.write(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.\n")
     file.write(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes.\n")
     file.write(f"Total time taken: {(code_end_time - code_start_time)/60} minutes.\n")
