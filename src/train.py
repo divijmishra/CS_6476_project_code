@@ -31,20 +31,31 @@ code_start_time = time.time()
 ##############################################################
 
 # How much train data do we want to use?
+##
 train_size = 10000  # 10000 or 40000
+##
 
 # define model
+##
 backbone = "resnet50"  # "vgg16" or "resnet50"
+##
+
+##
 tune_conv = False  # True or False
+##
 
 # # options for hyper-parameter tuning
 # num_epochs_optuna = 4
 # num_trials_optuna = 6
 
 # options for final training
+##
 lr = 1e-2  # (1e-2, 6.67e-3, 3.33e-3, 1e-3, 6.67e-4, 3.33e-4, 1e-4)
-num_epochs = 30
+##
+num_epochs = 50
 batch_size = 256
+
+patience = 5  # number of epochs to wait before early stopping
 
 ##############################################################
 
@@ -208,7 +219,14 @@ history = {
 
 train_start_time = time.time()
 
+# for early stopping
+best_val_loss = float('inf')
+counter = 0  # counter for tracking epochs without improvement
+# patience defined above
+# patience = 5  # number of epochs to wait before early stopping
+
 for epoch in range(num_epochs):
+    final_epochs = epoch
     epoch_start_time = time.time()
     
     # Training phase
@@ -259,6 +277,16 @@ for epoch in range(num_epochs):
     history['train_loss'].append(epoch_train_loss)
     history['val_loss'].append(epoch_val_loss)
     history['val_accuracy'].append(epoch_val_accuracy)
+    
+    # Check for early stopping
+    if epoch_val_loss < best_val_loss:
+        best_val_loss = epoch_val_loss
+        counter = 0
+    else:
+        counter += 1
+        if counter >= patience:
+            print(f"Early stopping at epoch {epoch+1}")
+            break
     
 train_end_time = time.time()
 
@@ -312,6 +340,7 @@ save_metrics(model, device, test_loader, label_weights, run_path)
 code_end_time = time.time()
 
 # print(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.")
+print(f"Final epochs trained: {final_epochs}")
 print(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes.")
 print(f"Total time taken: {(code_end_time - code_start_time)/60} minutes.")
 
