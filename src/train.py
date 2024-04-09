@@ -32,7 +32,7 @@ code_start_time = time.time()
 
 # How much train data do we want to use?
 ##
-train_size = 10000  # 10000 or 40000
+train_size = 512  # 10000 or 40000
 ##
 
 # define model
@@ -52,7 +52,7 @@ tune_conv = False  # True or False
 ##
 lr = 1e-2  # (1e-2, 6.67e-3, 3.33e-3, 1e-3, 6.67e-4, 3.33e-4, 1e-4)
 ##
-num_epochs = 50
+num_epochs = 2
 batch_size = 256
 
 patience = 5  # number of epochs to wait before early stopping
@@ -340,7 +340,7 @@ save_metrics(model, device, test_loader, label_weights, run_path)
 code_end_time = time.time()
 
 # print(f"Time taken for hyperparameter tuning: {(hyp_end_time - hyp_start_time)/60.0} minutes.")
-print(f"Final epochs trained: {final_epochs}")
+print(f"Final epochs trained: {final_epochs + 1}")
 print(f"Time taken for training: {(train_end_time - train_start_time)/60.0} minutes.")
 print(f"Total time taken: {(code_end_time - code_start_time)/60} minutes.")
 
