@@ -1,0 +1,2 @@
+Time taken for training: 259.8904798547427 minutes.
+Total time taken: 261.19987943967186 minutes.
