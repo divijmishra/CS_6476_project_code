@@ -32,7 +32,7 @@ code_start_time = time.time()
 
 # How much train data do we want to use?
 ##
-train_size = 512  # 10000 or 40000
+train_size = 40000  # 10000 or 40000
 ##
 
 # define model
@@ -50,10 +50,10 @@ tune_conv = False  # True or False
 
 # options for final training
 ##
-lr = 1e-2  # (1e-2, 6.67e-3, 3.33e-3, 1e-3, 6.67e-4, 3.33e-4, 1e-4)
+lr =  1e-2# (1e-2, 0.5e-3, 1e-3, 0.5e-4,  1e-4)
 ##
-num_epochs = 2
-batch_size = 256
+num_epochs = 30
+batch_size = 32
 
 patience = 5  # number of epochs to wait before early stopping
 
@@ -245,6 +245,8 @@ for epoch in range(num_epochs):
         
         running_loss += loss.item()
 
+    epoch_end_time = time.time()
+
     # Validation phase
     model.eval()
     val_running_loss = 0.0
@@ -269,9 +271,9 @@ for epoch in range(num_epochs):
     epoch_val_loss = val_running_loss / len(val_loader)
     epoch_val_accuracy = correct_preds / total_preds
     
-    epoch_end_time = time.time()
+    # epoch_end_time = time.time()
 
-    print(f"Epoch {epoch+1}, Training Loss: {epoch_train_loss}, Validation Loss: {epoch_val_loss}, Validation Accuracy: {epoch_val_accuracy}, Time taken: {(epoch_end_time - epoch_start_time)/60.0} minutes.")
+    print(f"Epoch {epoch+1}, Training Loss: {epoch_train_loss}, Validation Loss: {epoch_val_loss}, Validation Accuracy: {epoch_val_accuracy}, Training time taken: {(epoch_end_time - epoch_start_time)/60.0} minutes.")
 
     # Recording the metrics for this epoch
     history['train_loss'].append(epoch_train_loss)
