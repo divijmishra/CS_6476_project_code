@@ -50,7 +50,7 @@ tune_conv = False  # True or False
 
 # options for final training
 ##
-lr =  1e-2# (1e-2, 0.5e-3, 1e-3, 0.5e-4,  1e-4)
+lr = 1e-4# (1e-2, 0.5e-3, 1e-3, 0.5e-4,  1e-4)
 ##
 num_epochs = 30
 batch_size = 32
