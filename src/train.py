@@ -75,7 +75,7 @@ lr_reduction_factor = sqrt(0.1)
 num_epochs = 50
 batch_size = 32
 
-patience = 5  # number of epochs to wait before early stopping
+patience = 3  # number of epochs to wait before early stopping
 
 ##############################################################
 
@@ -92,7 +92,7 @@ data_path = "data/processed_data/"
 image_root_dir = data_path + "images/"
 
 # run saving path
-run_path = f"runs/tuneconv={tune_conv}_resolution={input_resolution[0]}_lr={lr}_num_epochs={num_epochs}_{backbone}_data={train_size}_run01/"
+run_path = f"runs/lrscheduler_tuneconv={tune_conv}_resolution={input_resolution[0]}_num_epochs={num_epochs}_{backbone}_data={train_size}_run01/"
 while os.path.exists(run_path):
     run_index = int(run_path[-3:-1]) + 1
     run_path = run_path[:-3] + f"{run_index:02d}/"
