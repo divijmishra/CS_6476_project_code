@@ -59,7 +59,12 @@ input_resolution = (448, 448) # (224, 224) or (448, 448)
 
 # options for final training
 ##
-lr = 0.5e-4 # (1e-3, 0.5e-4, 1e-4)
+# lr = 1e-3 # (1e-3, 0.5e-4, 1e-4)
+# if using lr scheduler, start with 1e-3
+if tune_conv:
+    lr = 1e-4
+else:
+    lr = 1e-3
 ##
 
 # how much to reduce the learning rate at every reduction
