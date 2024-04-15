@@ -89,7 +89,8 @@ print("Config settings completed.")
 
 # create image labels from annotations
 image_labels, categories = create_image_labels_list(data_path)
-num_categories = len(image_labels[0][1])
+# num_categories = len(image_labels[0][1])
+num_categories = 1  # vulnerable or not
 
 # split data
 # train_size defined earlier

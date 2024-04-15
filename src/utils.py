@@ -15,13 +15,13 @@ from tqdm import tqdm
 
 def create_image_labels_list(data_path) -> list:
     """
-    Given, the data path, return a list image_labels, containing tuples (image_file_name (str), category_labels (list of 0,1s))
+    Given, the data path, return a list image_labels, containing tuples (image_file_name (str), category_label (int, 0/1))
 
     Args:
         data_path (str)
 
     Returns:
-        image_labels (list): List of 0,1s corresponding to class labels.     
+        image_labels (list): List of tuples (image_file_name (str), category_label (int, 0/1)) 
     """
     
     # create image labels from annotations
@@ -30,7 +30,7 @@ def create_image_labels_list(data_path) -> list:
     with open(data_path + "metadata.json", "r") as f:
         metadata = json.load(f)
         
-    category_indices = {cat['name']: idx for idx, cat in enumerate(categories)}
+    category_indices = {cat['name']: idx for idx, cat in enumerate(categories)}  # cat['name'] = string like "human.pedestrian.adult"
 
     image_labels = {}
 
@@ -38,11 +38,29 @@ def create_image_labels_list(data_path) -> list:
         image_file_name = values["filename"]
         
         if image_file_name not in image_labels:
-            image_labels[image_file_name] = [0] * len(categories)
+            # image_labels[image_file_name] = [0] * len(categories)
+            image_labels[image_file_name] = 0
             
-        for cat in values["categories"]:
-            cat_index = category_indices[cat]
-            image_labels[image_file_name][cat_index] = 1
+        # for cat in values["categories"]:
+        #     cat_index = category_indices[cat]
+        #     image_labels[image_file_name][cat_index] = 1
+        
+        cats = values["categories"]
+        for cat in cats:
+            if cat in [
+                "animal",
+                "human.pedestrian.adult",
+                "human.pedestrian.child",
+                "human.pedestrian.construction_worker",
+                "human.pedestrian.personal_mobility",
+                "human.pedestrian.police_officer",
+                "human.pedestrian.stroller",
+                "human.pedestrian.wheelchair",
+                "vehicle.bicycle",
+                "vehicle.motorcycle",
+            ]:
+                image_labels[image_file_name] = 1
+                break
             
     image_labels = list(image_labels.items())
     return image_labels, categories
@@ -91,6 +109,31 @@ class MultiLabelDataset(Dataset):
         return image, torch.FloatTensor(labels)
     
     
+# our Torch Dataset object
+class SingleLabelDataset(Dataset):
+    def __init__(self, image_labels, root_dir, transform=None):
+        """
+        Args:
+            image_labels (list of tuples): List of tuples (image_path, label).
+            root_dir (string): Directory with all the images.
+            transform (callable, optional): Optional transform to be applied on a sample.
+        """
+        self.image_labels = image_labels
+        self.root_dir = root_dir
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.image_labels)
+
+    def __getitem__(self, idx):
+        img_name = os.path.join(self.root_dir, self.image_labels[idx][0])
+        image = Image.open(img_name)
+        label = self.image_labels[idx][1]
+        if self.transform:
+            image = self.transform(image)
+        return image, torch.FloatTensor(label)
+    
+    
 # create train, val, test Torch DataLoaders
 def create_data_loaders(
     train_data,
@@ -100,9 +143,9 @@ def create_data_loaders(
     batch_size,
     transform
 ):
-    train_dataset = MultiLabelDataset(image_labels=train_data, root_dir=image_root_dir, transform=transform)
-    val_dataset = MultiLabelDataset(image_labels=val_data, root_dir=image_root_dir, transform=transform)
-    test_dataset = MultiLabelDataset(image_labels=test_data, root_dir=image_root_dir, transform=transform)
+    train_dataset = SingleLabelDataset(image_labels=train_data, root_dir=image_root_dir, transform=transform)
+    val_dataset = SingleLabelDataset(image_labels=val_data, root_dir=image_root_dir, transform=transform)
+    test_dataset = SingleLabelDataset(image_labels=test_data, root_dir=image_root_dir, transform=transform)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -151,19 +194,18 @@ def show_images_with_predictions(dataloader, model, device, categories, num_imag
     plt.figure(figsize=(30, 30))
 
     with torch.no_grad():
-        for i, (inputs, labels) in enumerate(dataloader):
-            inputs, labels = inputs.to(device), labels.to(device)
-            outputs = model(inputs)
+        for i, (inputs, label) in enumerate(dataloader):
+            inputs, label = inputs.to(device), label.to(device)
+            output = model(inputs)
 
             for j in range(inputs.size()[0]):
                 images_so_far += 1
                 ax = plt.subplot(num_images//2, 2, images_so_far)
                 ax.axis('off')
 
-                predicted_labels = (outputs[j] > 0.5).int()
-                pred_labels_text = [categories[idx]["name"] for idx, label in enumerate(predicted_labels) if label == 1]
-                true_labels_text = [categories[idx]["name"] for idx, label in enumerate(labels[j]) if label == 1]
-
+                predicted_label = (output[j] > 0.5).int()
+                pred_labels_text = "vulnerable" if predicted_label == 1 else "not vulnerable"
+                true_labels_text = "vulnerable" if label == 1 else "not vulnerable"
                 ax.set_title(f"True: {true_labels_text}\nPred: {pred_labels_text}")
                 plt.imshow(tensor_to_image(inputs.cpu().data[j]))
 
@@ -185,35 +227,37 @@ def save_metrics(model, device, data_loader, label_weights, save_dir):
     all_true_labels = []
 
     with torch.no_grad():
-        for inputs, labels in data_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
+        for inputs, label in data_loader:
+            inputs, label = inputs.to(device), label.to(device)
 
-            outputs = model(inputs)
-            predicted = (outputs > 0.5).float()
+            output = model(inputs)
+            predicted = (output > 0.5).float()
 
-            all_preds.extend(predicted.cpu().numpy())
-            all_true_labels.extend(labels.cpu().numpy())
+            all_preds.append(predicted.cpu().numpy())
+            all_true_labels.append(label.cpu().numpy())
 
     all_preds = np.array(all_preds)
     all_true_labels = np.array(all_true_labels)
 
-    sample_weights = np.dot(all_true_labels, label_weights)
+    # sample_weights = np.dot(all_true_labels, label_weights)
 
-    precision = precision_score(all_true_labels, all_preds, average='samples', sample_weight=sample_weights)
-    recall = recall_score(all_true_labels, all_preds, average='samples', sample_weight=sample_weights)
-    f1 = f1_score(all_true_labels, all_preds, average='samples', sample_weight=sample_weights)
+    accuracy = accuracy_score(all_true_labels, all_preds, pos_label=1, average='binary')
+    precision = precision_score(all_true_labels, all_preds, pos_label=1, average='binary')
+    recall = recall_score(all_true_labels, all_preds, pos_label=1, average='binary')
+    f1 = f1_score(all_true_labels, all_preds, pos_label=1, average='binary')
 
     # If we dont want to weight
     # precision = precision_score(all_true_labels, all_preds, average='micro')
     # recall = recall_score(all_true_labels, all_preds, average='micro')
     # f1 = f1_score(all_true_labels, all_preds, average='micro')
 
-    # print(f"Accuracy: {accuracy}")
+    print(f"Accuracy: {accuracy}")
     print(f"Precision: {precision}")
     print(f"Recall: {recall}")
     print(f"F1 Score: {f1}")
     
     with open(save_dir + "metrics.txt", "w") as file:
+        file.write(f"Accuracy: {accuracy}")
         file.write(f"Precision: {precision}\n")
         file.write(f"Recall: {recall}\n")
         file.write(f"F1 Score: {f1}\n")
