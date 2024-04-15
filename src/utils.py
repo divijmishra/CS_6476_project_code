@@ -3,6 +3,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import torch
@@ -84,6 +85,42 @@ def split_data(
     return train_data, val_data, test_data
 
 
+# calculate training set means and stddevs for normalization
+def compute_mean_and_std(image_root_dir, train_data):
+    """
+    Calculates the mean and std for each pixel value in the training set.
+    
+    Args:
+        image_root_dir: location where all the images are stored
+        train_data: list of tuples (file_name (str), label (int))
+
+    Returns:
+        mean (list of floats, len=3), std (list of floats, len=3)
+    """
+    mean, std = [], []
+    
+    scaler_R = StandardScaler()
+    scaler_G = StandardScaler()
+    scaler_B = StandardScaler()
+    
+    for data in train_data:
+        image_path = image_root_dir + data[0]
+        img = Image.open(image_path)
+        img = np.array(img)
+        img = img / 255.0 
+        
+        for i, scaler in enumerate([scaler_R, scaler_G, scaler_B]):
+            pixel_values = np.ravel(img[:, :, i])
+            pixel_values = np.reshape(pixel_values, (-1, 1))
+            scaler.partial_fit(pixel_values)
+            
+    for i, scaler in enumerate([scaler_R, scaler_G, scaler_B]):
+        mean.append(scaler.mean_)
+        std.append(np.sqrt(scaler.var_))
+        
+    return mean, std
+        
+        
 # our Torch Dataset object
 class MultiLabelDataset(Dataset):
     def __init__(self, image_labels, root_dir, transform=None):
