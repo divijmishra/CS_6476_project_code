@@ -32,12 +32,12 @@ code_start_time = time.time()
 
 # How much train data do we want to use?
 ##
-train_size = 40000  # 10000 or 40000
+train_size = 512  # 10000 or 40000
 ##
 
 # define model
 ##
-backbone = "resnet50"  # "vgg16" or "resnet50"
+backbone = "resnet50"  # "resnet50"/"vgg16" supported, not using "vgg16"
 ##
 
 ##
@@ -50,7 +50,7 @@ tune_conv = False  # True or False
 
 # options for final training
 ##
-lr = 1e-4# (1e-2, 0.5e-3, 1e-3, 0.5e-4,  1e-4)
+lr = 1e-4# (1e-3, 0.5e-4,  1e-4)
 ##
 num_epochs = 30
 batch_size = 32
@@ -76,8 +76,11 @@ run_path = f"runs/{backbone}_tuneconv={tune_conv}_data={train_size}_lr={lr}_num_
 while os.path.exists(run_path):
     run_index = int(run_path[-3:-1]) + 1
     run_path = run_path[:-3] + f"{run_index:02d}/"
-os.mkdir(run_path)
+os.makedirs(run_path)
 print(f"This run will be saved in {run_path}.")
+
+model_path = "models" + run_path[4:]
+os.makedirs(model_path)
 
 print("Config settings completed.")
 
@@ -298,6 +301,12 @@ with open(run_path + "history.json", 'w') as file:
 
 print('Model training completed.')
 print(f"Time taken: {(train_end_time - train_start_time)/60.0} minutes")
+
+
+############ SAVE THE MODEL
+
+torch.save(model.state_dict(), model_path + 'model.pth')
+print("Saved the model.")
 
 
 ############ SAVING METRICS
