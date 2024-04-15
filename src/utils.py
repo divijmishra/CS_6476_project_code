@@ -40,7 +40,7 @@ def create_image_labels_list(data_path) -> list:
         
         if image_file_name not in image_labels:
             # image_labels[image_file_name] = [0] * len(categories)
-            image_labels[image_file_name] = 0
+            image_labels[image_file_name] = [0]
             
         # for cat in values["categories"]:
         #     cat_index = category_indices[cat]
@@ -60,7 +60,7 @@ def create_image_labels_list(data_path) -> list:
                 "vehicle.bicycle",
                 "vehicle.motorcycle",
             ]:
-                image_labels[image_file_name] = 1
+                image_labels[image_file_name] = [1]
                 break
             
     image_labels = list(image_labels.items())
@@ -115,8 +115,8 @@ def compute_mean_and_std(image_root_dir, train_data):
             scaler.partial_fit(pixel_values)
             
     for i, scaler in enumerate([scaler_R, scaler_G, scaler_B]):
-        mean.append(scaler.mean_)
-        std.append(np.sqrt(scaler.var_))
+        mean.append(scaler.mean_.item())
+        std.append(np.sqrt(scaler.var_).item())
         
     return mean, std
         
@@ -241,8 +241,8 @@ def show_images_with_predictions(dataloader, model, device, categories, num_imag
                 ax.axis('off')
 
                 predicted_label = (output[j] > 0.5).int()
-                pred_labels_text = "vulnerable" if predicted_label == 1 else "not vulnerable"
-                true_labels_text = "vulnerable" if label == 1 else "not vulnerable"
+                pred_labels_text = "vulnerable" if predicted_label == [1] else "not vulnerable"
+                true_labels_text = "vulnerable" if label == [1] else "not vulnerable"
                 ax.set_title(f"True: {true_labels_text}\nPred: {pred_labels_text}")
                 plt.imshow(tensor_to_image(inputs.cpu().data[j]))
 
@@ -270,15 +270,17 @@ def save_metrics(model, device, data_loader, label_weights, save_dir):
             output = model(inputs)
             predicted = (output > 0.5).float()
 
-            all_preds.append(predicted.cpu().numpy())
-            all_true_labels.append(label.cpu().numpy())
+            all_preds.extend(predicted.cpu().numpy())
+            all_true_labels.extend(label.cpu().numpy())
 
     all_preds = np.array(all_preds)
     all_true_labels = np.array(all_true_labels)
+    print(f"All_preds: {all_preds}")
+    print(f"All true labels: {all_true_labels}")
 
     # sample_weights = np.dot(all_true_labels, label_weights)
 
-    accuracy = accuracy_score(all_true_labels, all_preds, pos_label=1, average='binary')
+    accuracy = accuracy_score(all_true_labels, all_preds)
     precision = precision_score(all_true_labels, all_preds, pos_label=1, average='binary')
     recall = recall_score(all_true_labels, all_preds, pos_label=1, average='binary')
     f1 = f1_score(all_true_labels, all_preds, pos_label=1, average='binary')
@@ -294,7 +296,7 @@ def save_metrics(model, device, data_loader, label_weights, save_dir):
     print(f"F1 Score: {f1}")
     
     with open(save_dir + "metrics.txt", "w") as file:
-        file.write(f"Accuracy: {accuracy}")
+        file.write(f"Accuracy: {accuracy}\n")
         file.write(f"Precision: {precision}\n")
         file.write(f"Recall: {recall}\n")
         file.write(f"F1 Score: {f1}\n")

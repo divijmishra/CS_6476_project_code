@@ -33,7 +33,7 @@ code_start_time = time.time()
 
 # How much train data do we want to use?
 ##
-train_size = 512  # 10000 or 40000
+train_size = 64  # 10000 or 40000
 ##
 
 # define model
@@ -48,7 +48,7 @@ tune_conv = False  # True or False
 
 # what is the input resolution of images? the default for resnet and vggnet is 224x224
 ##
-input_resolution = (224, 224)  # (224, 224) or (448, 448)
+input_resolution = (448, 448)  # (224, 224) or (448, 448)
 ##
 
 # # options for hyper-parameter tuning
@@ -57,9 +57,9 @@ input_resolution = (224, 224)  # (224, 224) or (448, 448)
 
 # options for final training
 ##
-lr = 1e-4  # (1e-3, 0.5e-4,  1e-4)
+lr = 1e-3  # (1e-3, 0.5e-4, 1e-4)
 ##
-num_epochs = 30
+num_epochs = 2
 batch_size = 32
 
 patience = 5  # number of epochs to wait before early stopping
@@ -79,7 +79,7 @@ data_path = "data/processed_data/"
 image_root_dir = data_path + "images/"
 
 # run saving path
-run_path = f"runs/{backbone}_tuneconv={tune_conv}_data={train_size}_lr={lr}_num_epochs={num_epochs}_run01/"
+run_path = f"runs/tuneconv={tune_conv}_resolution={input_resolution[0]}_lr={lr}_num_epochs={num_epochs}_{backbone}_data={train_size}_run01/"
 while os.path.exists(run_path):
     run_index = int(run_path[-3:-1]) + 1
     run_path = run_path[:-3] + f"{run_index:02d}/"
@@ -101,7 +101,8 @@ num_categories = 1  # vulnerable or not
 
 # split data
 # train_size defined earlier
-test_size, val_size = 2000, 2000
+# test_size, val_size = 2000, 2000
+test_size, val_size = 64, 64
 train_data, val_data, test_data = split_data(
     image_labels, train_size, val_size, test_size, seed
 )
