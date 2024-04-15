@@ -41,8 +41,14 @@ train_size = 512  # 10000 or 40000
 backbone = "resnet50"  # "resnet50"/"vgg16" supported, not using "vgg16"
 ##
 
+# tune convolutional layers as well?
 ##
 tune_conv = False  # True or False
+##
+
+# what is the input resolution of images? the default for resnet and vggnet is 224x224
+##
+input_resolution = (224, 224)  # (224, 224) or (448, 448)
 ##
 
 # # options for hyper-parameter tuning
@@ -51,7 +57,7 @@ tune_conv = False  # True or False
 
 # options for final training
 ##
-lr = 1e-4# (1e-3, 0.5e-4,  1e-4)
+lr = 1e-4  # (1e-3, 0.5e-4,  1e-4)
 ##
 num_epochs = 30
 batch_size = 32
@@ -106,7 +112,7 @@ print(f"Trainset mean = {mean}, std = {std}")
 
 # create Torch DataLoaders
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.Resize(input_resolution),
     transforms.ToTensor(),
     transforms.Normalize(mean=mean, std=std),
 ])
@@ -321,7 +327,7 @@ print("Saved the model.")
 plot_training_history(history, run_path)
 
 # save test images
-show_images_with_predictions(test_loader, model, device, categories, num_images=6, save_dir=run_path)
+show_images_with_predictions(test_loader, model, device, categories, num_images=12, save_dir=run_path)
 
 # save weighted metrics
 label_weights = np.array([
