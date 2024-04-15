@@ -1,6 +1,7 @@
 import os
 import json
 import numpy as np
+from math import sqrt
 from PIL import Image
 from sklearn.model_selection import train_test_split
 import torch
@@ -9,6 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import torchvision.models as models
 from torch.optim import Adam
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import optuna
 from tqdm import tqdm
 import time
@@ -59,7 +61,13 @@ input_resolution = (448, 448) # (224, 224) or (448, 448)
 ##
 lr = 0.5e-4 # (1e-3, 0.5e-4, 1e-4)
 ##
-num_epochs = 30
+
+# how much to reduce the learning rate at every reduction
+##
+lr_reduction_factor = sqrt(0.1)
+##
+
+num_epochs = 50
 batch_size = 32
 
 patience = 5  # number of epochs to wait before early stopping
@@ -225,6 +233,7 @@ model = model.to(device)
 
 # define the optimizer
 optimizer = Adam(model.parameters(), lr=lr)
+scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=lr_reduction_factor, patience=patience, verbose=True)
 
 # train the model
 history = {
@@ -287,6 +296,8 @@ for epoch in range(num_epochs):
     epoch_val_loss = val_running_loss / len(val_loader)
     epoch_val_accuracy = correct_preds / total_preds
     
+    scheduler.step(epoch_val_loss)
+    
     # epoch_end_time = time.time()
 
     print(f"Epoch {epoch+1}, Training Loss: {epoch_train_loss}, Validation Loss: {epoch_val_loss}, Validation Accuracy: {epoch_val_accuracy}, Training time taken: {(epoch_end_time - epoch_start_time)/60.0} minutes.")
@@ -297,14 +308,15 @@ for epoch in range(num_epochs):
     history['val_accuracy'].append(epoch_val_accuracy)
     
     # Check for early stopping
-    if epoch_val_loss < best_val_loss:
-        best_val_loss = epoch_val_loss
-        counter = 0
-    else:
-        counter += 1
-        if counter >= patience:
-            print(f"Early stopping at epoch {epoch+1}")
-            break
+    # if epoch_val_loss < best_val_loss:
+    #     best_val_loss = epoch_val_loss
+    #     counter = 0
+    # else:
+    #     counter += 1
+    #     if counter >= patience:
+    #         print(f"Early stopping at epoch {epoch+1}")
+    #         break
+
     
 train_end_time = time.time()
 
