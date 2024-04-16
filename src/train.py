@@ -45,12 +45,12 @@ backbone = "resnet50"  # "resnet50"/"vgg16" supported, not using "vgg16"
 
 # tune convolutional layers as well?
 ##
-tune_conv = False  # True or False
+tune_conv = True  # True or False
 ##
 
 # what is the input resolution of images? the default for resnet and vggnet is 224x224
 ##
-input_resolution = (448, 448) # (224, 224) or (448, 448)
+input_resolution =(448, 448) # (224, 224) or (448, 448)
 ##
 
 # # options for hyper-parameter tuning
