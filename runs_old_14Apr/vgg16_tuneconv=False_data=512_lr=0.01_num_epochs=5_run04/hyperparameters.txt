@@ -1,7 +1,0 @@
-backbone: vgg16
-tune_conv: False
-train_size: 512
-batch_size: 32
-num_epochs: 5
-lr: 0.01
-dropout_rate: 0.5
